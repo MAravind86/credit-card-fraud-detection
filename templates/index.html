@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudGuard - ML Fraud Detection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .sidebar-transition { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .metric-card { transition: all 0.3s ease; }
+        .metric-card:hover { transform: scale(1.02); }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* Dark mode styles */
+        .dark {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border-color: #475569;
+        }
+        
+        .dark body {
+            background-color: var(--bg-primary) !important;
+            color: var(--text-primary) !important;
+        }
+        
+        .dark main {
+            background-color: var(--bg-primary) !important;
+        }
+        
+        .dark .bg-white {
+            background-color: var(--bg-card) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        .dark .text-slate-900 {
+            color: var(--text-primary) !important;
+        }
+        
+        .dark .text-slate-600 {
+            color: var(--text-secondary) !important;
+        }
+        
+        .dark .text-slate-500 {
+            color: var(--text-secondary) !important;
+        }
+        
+        .dark .border-slate-200 {
+            border-color: var(--border-color) !important;
+        }
+        
+        .dark .bg-slate-50 {
+            background-color: var(--bg-secondary) !important;
+        }
+        
+        .dark .bg-slate-100 {
+            background-color: var(--bg-secondary) !important;
+        }
+        
+        .dark .bg-slate-200 {
+            background-color: var(--border-color) !important;
+        }
+        
+        .dark .bg-slate-900 {
+            background-color: var(--bg-secondary) !important;
+        }
+        
+        .dark .text-slate-300 {
+            color: var(--text-secondary) !important;
+        }
+        
+        .dark .hover\\:bg-slate-800:hover {
+            background-color: var(--bg-card) !important;
+        }
+        
+        .dark .bg-green-50 {
+            background-color: rgba(34, 197, 94, 0.1) !important;
+        }
+        
+        .dark .bg-red-50 {
+            background-color: rgba(239, 68, 68, 0.1) !important;
+        }
+        
+        .dark .bg-orange-50 {
+            background-color: rgba(249, 115, 22, 0.1) !important;
+        }
+        
+        .dark .border-red-200 {
+            border-color: rgba(239, 68, 68, 0.3) !important;
+        }
+        
+        .dark .border-orange-200 {
+            border-color: rgba(249, 115, 22, 0.3) !important;
+        }
+        
+        .dark .border-slate-300 {
+            border-color: var(--border-color) !important;
+        }
+        
+        .dark .focus\\:ring-blue-500:focus {
+            --tw-ring-color: #3b82f6;
+        }
+        
+        .dark .focus\\:border-transparent:focus {
+            border-color: transparent !important;
+        }
+        
+        /* Keep sidebar dark but visible */
+        .dark #sidebar {
+            background-color: #1e293b !important;
+            border-right: 1px solid var(--border-color) !important;
+        }
+        
+        /* Tab content background */
+        .dark .tab-content {
+            background-color: var(--bg-primary) !important;
+        }
+        
+        /* Input fields in dark mode */
+        .dark input {
+            background-color: var(--bg-secondary) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+        
+        .dark input::placeholder {
+            color: var(--text-secondary) !important;
+        }
+        
+        /* Buttons in dark mode */
+        .dark button {
+            color: var(--text-primary) !important;
+        }
+        
+        /* Gradient backgrounds in dark mode */
+        .dark .bg-gradient-to-r {
+            background: linear-gradient(to right, #1e40af, #7c3aed) !important;
+        }
+        
+        .theme-toggle {
+            transition: all 0.3s ease;
+        }
+        
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+    <!-- Sidebar -->
+    <div id="sidebar" class="w-64 bg-slate-900 min-h-screen p-6 fixed left-0 top-0 sidebar-transition">
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-white mb-2">FraudGuard</h1>
+            <p class="text-slate-400 text-sm">ML Fraud Detection</p>
+        </div>
+        
+        <nav class="space-y-2">
+            <button onclick="showTab('dashboard')" class="sidebar-btn w-full flex items-center px-4 py-3 rounded-lg transition-colors text-white bg-blue-600">
+                <i data-lucide="bar-chart-3" class="w-5 h-5 mr-3"></i>
+                Dashboard
+            </button>
+            <button onclick="showTab('analytics')" class="sidebar-btn w-full flex items-center px-4 py-3 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i data-lucide="bar-chart" class="w-5 h-5 mr-3"></i>
+                Analytics
+            </button>
+            <button onclick="showTab('detection')" class="sidebar-btn w-full flex items-center px-4 py-3 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i data-lucide="activity" class="w-5 h-5 mr-3"></i>
+                Fraud Analysis
+            </button>
+            <button onclick="showTab('history')" class="sidebar-btn w-full flex items-center px-4 py-3 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i data-lucide="history" class="w-5 h-5 mr-3"></i>
+                Transaction History
+            </button>
+        </nav>
+        
+        <!-- Theme Toggle -->
+        <div class="mt-8 pt-6 border-t border-slate-700">
+            <button onclick="toggleTheme()" id="themeToggle" class="theme-toggle w-full flex items-center px-4 py-3 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i data-lucide="sun" id="themeIcon" class="w-5 h-5 mr-3"></i>
+                <span id="themeText">Light Mode</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="ml-64 p-6">
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content">
+            <div class="space-y-6">
+                <!-- Welcome Header -->
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-xl text-white">
+                    <h1 class="text-3xl font-bold mb-2">Welcome to FraudGuard</h1>
+                    <p class="text-blue-100">Live fraud detection powered by machine learning</p>
+                    <div class="mt-4 flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="clock" class="w-4 h-4"></i>
+                            <span id="currentTime"></span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="activity" class="w-4 h-4"></i>
+                            <span>System Status: <span class="text-green-300 font-semibold">Active</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Metrics Row 1 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="metric-card bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <i data-lucide="trending-up" class="w-8 h-8 text-blue-600"></i>
+                            <span class="text-sm font-medium text-green-600">+12.5%</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-900 mb-1">284,807</h3>
+                        <p class="text-slate-600 text-sm">Total Transactions</p>
+                        <div class="mt-2 text-xs text-slate-500">Last 30 days</div>
+                    </div>
+                    
+                    <div class="metric-card bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <i data-lucide="alert-triangle" class="w-8 h-8 text-red-600"></i>
+                            <span class="text-sm font-medium text-red-600">-2.3%</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-900 mb-1">492</h3>
+                        <p class="text-slate-600 text-sm">Fraud Detected</p>
+                        <div class="mt-2 text-xs text-slate-500">0.17% fraud rate</div>
+                    </div>
+                    
+                    <div class="metric-card bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <i data-lucide="dollar-sign" class="w-8 h-8 text-green-600"></i>
+                            <span class="text-sm font-medium text-green-600">+8.1%</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-900 mb-1">₹12.45M</h3>
+                        <p class="text-slate-600 text-sm">Total Amount</p>
+                        <div class="mt-2 text-xs text-slate-500">Avg: ₹43.7 per transaction</div>
+                    </div>
+                    
+                    <div class="metric-card bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <i data-lucide="shield" class="w-8 h-8 text-purple-600"></i>
+                            <span class="text-sm font-medium text-green-600">98.3%</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-900 mb-1">98.3%</h3>
+                        <p class="text-slate-600 text-sm">Model Accuracy</p>
+                        <div class="mt-2 text-xs text-slate-500">ROC AUC Score</div>
+                    </div>
+                </div>
+
+                <!-- Key Metrics Row 2 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="metric-card bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <i data-lucide="zap" class="w-8 h-8 text-yellow-600"></i>
+                            <span class="text-sm font-medium text-green-600">Real-time</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-900 mb-1">< 100ms</h3>
+                        <p class="text-slate-600 text-sm">Avg Response Time</p>
+                        <div class="mt-2 text-xs text-slate-500">Lightning fast detection</div>
+                    </div>
+                    
+                    <div class="metric-card bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <i data-lucide="users" class="w-8 h-8 text-indigo-600"></i>
+                            <span class="text-sm font-medium text-blue-600">Active</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-900 mb-1" id="activeUsers">1,247</h3>
+                        <p class="text-slate-600 text-sm">Active Users</p>
+                        <div class="mt-2 text-xs text-slate-500">Online now</div>
+                    </div>
+                    
+                    <div class="metric-card bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <i data-lucide="target" class="w-8 h-8 text-orange-600"></i>
+                            <span class="text-sm font-medium text-green-600">97%</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-900 mb-1">97%</h3>
+                        <p class="text-slate-600 text-sm">Precision Rate</p>
+                        <div class="mt-2 text-xs text-slate-500">False positive rate: 3%</div>
+                    </div>
+                    
+                    <div class="metric-card bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <i data-lucide="clock" class="w-8 h-8 text-cyan-600"></i>
+                            <span class="text-sm font-medium text-green-600">24/7</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-900 mb-1">99.9%</h3>
+                        <p class="text-slate-600 text-sm">Uptime</p>
+                        <div class="mt-2 text-xs text-slate-500">Last 30 days</div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Transaction Status Summary -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-slate-900">Transaction Status</h3>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                                <span class="text-sm text-slate-600">Live</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center p-4 bg-green-50 rounded-lg">
+                                <div class="text-2xl font-bold text-green-600" id="liveLegitimate">0</div>
+                                <p class="text-sm text-slate-600">Legitimate</p>
+                            </div>
+                            <div class="text-center p-4 bg-red-50 rounded-lg">
+                                <div class="text-2xl font-bold text-red-600" id="liveFraud">0</div>
+                                <p class="text-sm text-slate-600">Fraudulent</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fraud Detection Summary -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-4">Today's Fraud Detection Summary</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-600">Transactions Analyzed</span>
+                                <span class="font-semibold" id="todayAnalyzed">0</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-600">Fraud Cases Detected</span>
+                                <span class="font-semibold text-red-600" id="todayFraudCases">0</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-600">High Risk Alerts</span>
+                                <span class="font-semibold text-red-600" id="todayHighRisk">0</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-600">Success Rate</span>
+                                <span class="font-semibold text-green-600" id="todaySuccessRate">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" id="successBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity & System Status -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Recent Activity -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-4">Recent Activity</h3>
+                        <div id="recentActivity" class="space-y-3">
+                            <div class="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg">
+                                <i data-lucide="activity" class="w-5 h-5 text-blue-600"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-slate-900">System initialized</p>
+                                    <p class="text-xs text-slate-500">Just now</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- System Status -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-4">System Status</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-600">ML Model</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span class="text-green-600 font-semibold">Active</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-600">Database</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span class="text-green-600 font-semibold">Connected</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-600">API Services</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span class="text-green-600 font-semibold">Running</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-600">Monitoring</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span class="text-green-600 font-semibold">Online</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content hidden">
+            <div class="space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Fraud Distribution Pie Chart -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-4">Fraud Distribution</h3>
+                        <canvas id="fraudPieChart" width="400" height="300"></canvas>
+                    </div>
+                    
+                    <!-- Transaction Amount Distribution -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-4">Amount Distribution</h3>
+                        <canvas id="amountHistogram" width="400" height="300"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Fraud Trends Over Time -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-4">Fraud Trends Over Time</h3>
+                        <canvas id="fraudTrendsChart" width="400" height="300"></canvas>
+                    </div>
+                    
+                    <!-- Model Performance Metrics -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-4">Model Performance</h3>
+                        <canvas id="modelMetricsChart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+
+                <!-- Dataset Statistics -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-semibold text-slate-900 mb-4">Dataset Statistics</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-blue-600 mb-2">284,807</div>
+                            <p class="text-slate-600">Total Transactions</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-red-600 mb-2">492</div>
+                            <p class="text-slate-600">Fraudulent (0.17%)</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-green-600 mb-2">284,315</div>
+                            <p class="text-slate-600">Legitimate (99.83%)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fraud Analysis Tab -->
+        <div id="detection" class="tab-content hidden">
+            <div class="max-w-4xl mx-auto space-y-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-6">Fraud Analysis</h2>
+                    
+                    <form id="detectionForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">
+                                Transaction ID
+                            </label>
+                            <input type="text" name="transactionId" id="transactionId" 
+                                class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="TXN12345" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">
+                                Transaction Amount (₹)
+                            </label>
+                            <input type="number" name="amount" id="amount" step="0.01" inputmode="decimal"
+                                class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter amount in rupees" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">
+                                Time
+                            </label>
+                            <input type="text" name="timestamp" id="timestamp" 
+                                class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="now or 14:30 or 1737480000" required>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <button type="submit" id="analyzeBtn" 
+                                class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                Analyze Transaction
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hidden">
+                    <div class="flex items-center justify-center space-x-3">
+                        <div class="spinner rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span class="text-slate-600">Processing transaction through ML model...</span>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div id="resultState" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hidden">
+                    <h3 class="text-xl font-bold text-slate-900 mb-4">Detection Result</h3>
+                    <div id="resultContent"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction History Tab -->
+        <div id="history" class="tab-content hidden">
+            <div class="space-y-6">
+                <!-- Header with Export -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold text-slate-900">Transaction History</h2>
+                        <div class="flex space-x-3">
+                            <button onclick="exportTransactions('csv')" 
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                <span>Export CSV</span>
+                            </button>
+                            <button onclick="exportTransactions('json')" 
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2">
+                                <i data-lucide="file-json" class="w-4 h-4"></i>
+                                <span>Export JSON</span>
+                            </button>
+                            <button onclick="loadTransactionHistory()" 
+                                class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 flex items-center space-x-2">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                <span>Refresh</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="p-4 bg-slate-50 rounded-lg">
+                            <div class="text-2xl font-bold text-slate-900" id="historyTotal">0</div>
+                            <p class="text-sm text-slate-600">Total Transactions</p>
+                        </div>
+                        <div class="p-4 bg-red-50 rounded-lg">
+                            <div class="text-2xl font-bold text-red-600" id="historyFraud">0</div>
+                            <p class="text-sm text-slate-600">Fraud Cases</p>
+                        </div>
+                        <div class="p-4 bg-green-50 rounded-lg">
+                            <div class="text-2xl font-bold text-green-600" id="historyLegit">0</div>
+                            <p class="text-sm text-slate-600">Legitimate</p>
+                        </div>
+                        <div class="p-4 bg-orange-50 rounded-lg">
+                            <div class="text-2xl font-bold text-orange-600" id="historyHighRisk">0</div>
+                            <p class="text-sm text-slate-600">High Risk</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction List -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-slate-900">All Transactions</h3>
+                        <input type="text" id="historySearch" placeholder="Search by ID..." 
+                            class="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            onkeyup="filterTransactions()">
+                    </div>
+                    <div id="historyList" class="space-y-3">
+                        <div class="text-center py-8 text-slate-500">
+                            <i data-lucide="loader" class="w-8 h-8 mx-auto mb-2 spinner"></i>
+                            <p>Loading transactions...</p>
+                        </div>
+                    </div>
+                    <div id="historyPagination" class="mt-4 flex justify-center space-x-2"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Global variables for tracking
+        let transactionHistory = [];
+        let todayStats = {
+            transactions: 0,
+            fraud: 0,
+            highRisk: 0,
+            mediumRisk: 0,
+            lowRisk: 0
+        };
+
+        // Chart instances
+        let fraudPieChart, amountHistogram, fraudTrendsChart, modelMetricsChart;
+
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.remove('hidden');
+            
+            // Update sidebar buttons
+            document.querySelectorAll('.sidebar-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('text-slate-300', 'hover:bg-slate-800', 'hover:text-white');
+            });
+            
+            // Highlight active button
+            event.target.classList.add('bg-blue-600', 'text-white');
+            event.target.classList.remove('text-slate-300', 'hover:bg-slate-800', 'hover:text-white');
+            
+            // Load tab-specific data
+            if (tabName === 'dashboard') {
+                loadDashboard();
+            } else if (tabName === 'analytics') {
+                loadAnalytics();
+            } else if (tabName === 'history') {
+                loadTransactionHistory();
+            }
+        }
+
+        // Form submission
+        document.getElementById('detectionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {
+                transaction_id: formData.get('transactionId'),
+                amount: parseFloat(formData.get('amount')),
+                time: formData.get('timestamp') || 'now'
+            };
+            
+            // Show loading state
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('resultState').classList.add('hidden');
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('analyzeBtn').textContent = 'Analyzing Transaction...';
+            
+            try {
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                // Hide loading, show results
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('resultState').classList.remove('hidden');
+                
+                // Display results
+                displayResults(result);
+                
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('analyzeBtn').textContent = 'Analyze Transaction';
+            }
+        });
+
+        // Display results
+        function displayResults(result) {
+            const resultContent = document.getElementById('resultContent');
+            const isFraud = result.fraud_prediction === 'FRAUD';
+            const riskColor = result.risk_level === 'HIGH' ? 'text-red-600' : 
+                             result.risk_level === 'MEDIUM' ? 'text-yellow-600' : 'text-green-600';
+            
+            // Format risk factors
+            const riskFactorsHtml = result.risk_factors ? 
+                result.risk_factors.map(factor => `<li class="flex items-center space-x-2"><i data-lucide="alert-circle" class="w-4 h-4 text-orange-500"></i><span>${factor}</span></li>`).join('') :
+                '<li class="text-slate-500">No specific risk factors identified</li>';
+            
+            resultContent.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center">
+                        ${isFraud ? 
+                            '<i data-lucide="alert-triangle" class="w-16 h-16 text-red-500 mx-auto mb-3"></i>' :
+                            '<i data-lucide="check-circle" class="w-16 h-16 text-green-500 mx-auto mb-3"></i>'
+                        }
+                        <h4 class="text-lg font-semibold ${isFraud ? 'text-red-600' : 'text-green-600'}">
+                            ${result.fraud_prediction}
+                        </h4>
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-slate-900 mb-2">
+                            ${(result.fraud_probability * 100).toFixed(1)}%
+                        </div>
+                        <p class="text-slate-600">Fraud Score</p>
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="text-3xl font-bold mb-2 ${riskColor}">
+                            ${result.risk_level}
+                        </div>
+                        <p class="text-slate-600">Risk Level</p>
+                    </div>
+                </div>
+                
+                <div class="mt-6 p-4 bg-slate-50 rounded-lg">
+                    <h5 class="font-semibold text-slate-900 mb-2">Transaction Details</h5>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-slate-600">ID:</span>
+                            <span class="font-medium">${result.transaction_id}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-600">Amount:</span>
+                            <span class="font-medium">₹${result.amount}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-600">Time:</span>
+                            <span class="font-medium">${result.timestamp}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-600">Risk Level:</span>
+                            <span class="font-medium">${result.confidence}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <h5 class="font-semibold text-orange-800 mb-2 flex items-center space-x-2">
+                        <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                        <span>Risk Factors</span>
+                    </h5>
+                    <ul class="text-sm text-orange-700 space-y-1">
+                        ${riskFactorsHtml}
+                    </ul>
+                </div>
+                
+                ${isFraud ? `
+                    <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <h5 class="font-semibold text-red-800 mb-2">Recommended Actions:</h5>
+                        <ul class="text-red-700 text-sm space-y-1">
+                            <li>• Block the transaction immediately</li>
+                            <li>• Contact the cardholder for verification</li>
+                            <li>• Review recent transaction history</li>
+                            <li>• Consider temporarily freezing the card</li>
+                        </ul>
+                    </div>
+                ` : `
+                    <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h5 class="font-semibold text-green-800 mb-2">Transaction Approved</h5>
+                        <ul class="text-green-700 text-sm space-y-1">
+                            <li>• Transaction appears legitimate</li>
+                            <li>• Continue monitoring</li>
+                            <li>• No immediate action required</li>
+                        </ul>
+                    </div>
+                `}
+            `;
+            
+            // Re-initialize icons
+            lucide.createIcons();
+            
+            // Update today's stats
+            updateTodayStats(result);
+        }
+
+        // Update today's statistics
+        function updateTodayStats(result) {
+            todayStats.transactions++;
+            if (result.fraud_prediction === 'FRAUD') {
+                todayStats.fraud++;
+            }
+            
+            if (result.risk_level === 'HIGH') {
+                todayStats.highRisk++;
+            } else if (result.risk_level === 'MEDIUM') {
+                todayStats.mediumRisk++;
+            } else {
+                todayStats.lowRisk++;
+            }
+        }
+
+        // Load Analytics Charts
+        function loadAnalytics() {
+            // Fraud Distribution Pie Chart
+            const fraudCtx = document.getElementById('fraudPieChart').getContext('2d');
+            if (fraudPieChart) fraudPieChart.destroy();
+            fraudPieChart = new Chart(fraudCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Legitimate', 'Fraudulent'],
+                    datasets: [{
+                        data: [284315, 492],
+                        backgroundColor: ['#10b981', '#ef4444'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Amount Distribution Histogram
+            const amountCtx = document.getElementById('amountHistogram').getContext('2d');
+            if (amountHistogram) amountHistogram.destroy();
+            amountHistogram = new Chart(amountCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['0-50', '50-100', '100-500', '500-1000', '1000-5000', '5000+'],
+                    datasets: [{
+                        label: 'Transaction Count',
+                        data: [120000, 80000, 60000, 15000, 8000, 1807],
+                        backgroundColor: '#3b82f6',
+                        borderColor: '#2563eb',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Fraud Trends Over Time
+            const trendsCtx = document.getElementById('fraudTrendsChart').getContext('2d');
+            if (fraudTrendsChart) fraudTrendsChart.destroy();
+            fraudTrendsChart = new Chart(trendsCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+                    datasets: [{
+                        label: 'Fraud Cases',
+                        data: [45, 52, 38, 61, 48, 55, 42, 49, 38],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Legitimate Cases',
+                        data: [25000, 28000, 26000, 29000, 27000, 30000, 28000, 31000, 29000],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Model Performance Metrics
+            const metricsCtx = document.getElementById('modelMetricsChart').getContext('2d');
+            if (modelMetricsChart) modelMetricsChart.destroy();
+            modelMetricsChart = new Chart(metricsCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Accuracy', 'Precision', 'Recall', 'F1-Score', 'ROC AUC', 'Specificity'],
+                    datasets: [{
+                        label: 'Model Performance',
+                        data: [97, 100, 90, 95, 98.3, 100],
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#3b82f6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load Dashboard
+        function loadDashboard() {
+            // Update current time
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+            
+            // Update today's stats
+            updateDashboardStats();
+            
+            // Update live transaction counters
+            updateLiveCounters();
+            
+            // Update active users (simulate)
+            updateActiveUsers();
+            
+            // Add recent activity
+            addRecentActivity('Dashboard loaded', 'info');
+        }
+
+        // Update current time
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour12: true, 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('currentTime').textContent = timeString;
+        }
+
+        // Update dashboard statistics
+        function updateDashboardStats() {
+            document.getElementById('todayAnalyzed').textContent = todayStats.transactions;
+            document.getElementById('todayFraudCases').textContent = todayStats.fraud;
+            document.getElementById('todayHighRisk').textContent = todayStats.highRisk;
+            
+            const successRate = todayStats.transactions > 0 ? 
+                Math.round((todayStats.transactions - todayStats.fraud) / todayStats.transactions * 100) : 0;
+            document.getElementById('todaySuccessRate').textContent = successRate + '%';
+            document.getElementById('successBar').style.width = successRate + '%';
+        }
+
+        // Update live transaction counters
+        function updateLiveCounters() {
+            // Simulate live transaction counts
+            const legitimateCount = Math.floor(Math.random() * 50) + 100;
+            const fraudCount = Math.floor(Math.random() * 5) + 1;
+            
+            document.getElementById('liveLegitimate').textContent = legitimateCount;
+            document.getElementById('liveFraud').textContent = fraudCount;
+            
+            // Update every 5 seconds
+            setTimeout(updateLiveCounters, 5000);
+        }
+
+        // Update active users (simulate)
+        function updateActiveUsers() {
+            const baseUsers = 1247;
+            const variation = Math.floor(Math.random() * 50) - 25;
+            document.getElementById('activeUsers').textContent = (baseUsers + variation).toLocaleString();
+        }
+
+        // Add recent activity
+        function addRecentActivity(message, type = 'info') {
+            const activityContainer = document.getElementById('recentActivity');
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit'
+            });
+            
+            const iconMap = {
+                'info': 'activity',
+                'success': 'check-circle',
+                'warning': 'alert-triangle',
+                'error': 'x-circle'
+            };
+            
+            const colorMap = {
+                'info': 'text-blue-600',
+                'success': 'text-green-600',
+                'warning': 'text-yellow-600',
+                'error': 'text-red-600'
+            };
+            
+            const activityItem = document.createElement('div');
+            activityItem.className = 'flex items-center space-x-3 p-3 bg-slate-50 rounded-lg';
+            activityItem.innerHTML = `
+                <i data-lucide="${iconMap[type]}" class="w-5 h-5 ${colorMap[type]}"></i>
+                <div>
+                    <p class="text-sm font-medium text-slate-900">${message}</p>
+                    <p class="text-xs text-slate-500">${timeString}</p>
+                </div>
+            `;
+            
+            // Add to top of list
+            activityContainer.insertBefore(activityItem, activityContainer.firstChild);
+            
+            // Keep only last 5 activities
+            while (activityContainer.children.length > 5) {
+                activityContainer.removeChild(activityContainer.lastChild);
+            }
+            
+            // Re-initialize icons
+            lucide.createIcons();
+        }
+
+        // Theme management
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            
+            if (body.classList.contains('dark')) {
+                // Switch to light mode
+                body.classList.remove('dark');
+                themeIcon.setAttribute('data-lucide', 'moon');
+                themeText.textContent = 'Dark Mode';
+                localStorage.setItem('theme', 'light');
+            } else {
+                // Switch to dark mode
+                body.classList.add('dark');
+                themeIcon.setAttribute('data-lucide', 'sun');
+                themeText.textContent = 'Light Mode';
+                localStorage.setItem('theme', 'dark');
+            }
+            
+            // Re-initialize icons
+            lucide.createIcons();
+        }
+        
+        // Load saved theme
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            
+            if (savedTheme === 'dark') {
+                body.classList.add('dark');
+                themeIcon.setAttribute('data-lucide', 'sun');
+                themeText.textContent = 'Light Mode';
+            } else {
+                body.classList.remove('dark');
+                themeIcon.setAttribute('data-lucide', 'moon');
+                themeText.textContent = 'Dark Mode';
+            }
+            
+            // Re-initialize icons
+            lucide.createIcons();
+        }
+
+        // Transaction History Functions
+        let allTransactions = [];
+        let filteredTransactions = [];
+
+        async function loadTransactionHistory() {
+            try {
+                const response = await fetch('/api/transactions');
+                const data = await response.json();
+                
+                if (data.transactions) {
+                    allTransactions = data.transactions;
+                    filteredTransactions = data.transactions;
+                    displayTransactions(data.transactions);
+                    
+                    // Load statistics
+                    loadHistoryStatistics();
+                } else {
+                    document.getElementById('historyList').innerHTML = 
+                        '<div class="text-center py-8 text-slate-500">No transactions found</div>';
+                }
+            } catch (error) {
+                console.error('Error loading transaction history:', error);
+                document.getElementById('historyList').innerHTML = 
+                    '<div class="text-center py-8 text-red-500">Error loading transactions</div>';
+            }
+        }
+
+        async function loadHistoryStatistics() {
+            try {
+                const response = await fetch('/api/statistics');
+                const stats = await response.json();
+                
+                document.getElementById('historyTotal').textContent = stats.total_transactions || 0;
+                document.getElementById('historyFraud').textContent = stats.fraud_count || 0;
+                document.getElementById('historyLegit').textContent = stats.legitimate_count || 0;
+                document.getElementById('historyHighRisk').textContent = stats.high_risk_count || 0;
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        function displayTransactions(transactions) {
+            const historyList = document.getElementById('historyList');
+            
+            if (transactions.length === 0) {
+                historyList.innerHTML = '<div class="text-center py-8 text-slate-500">No transactions found</div>';
+                return;
+            }
+            
+            historyList.innerHTML = transactions.map(tx => {
+                const isFraud = tx.fraud_prediction === 'FRAUD';
+                const riskColor = tx.risk_level === 'HIGH' ? 'border-red-300 bg-red-50' : 
+                                 tx.risk_level === 'MEDIUM' ? 'border-orange-300 bg-orange-50' : 
+                                 'border-green-300 bg-green-50';
+                const predColor = isFraud ? 'text-red-600' : 'text-green-600';
+                
+                return `
+                    <div class="p-4 border rounded-lg ${riskColor} hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <span class="font-semibold text-slate-900">${tx.transaction_id || 'N/A'}</span>
+                                    <span class="px-2 py-1 text-xs rounded-full ${isFraud ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
+                                        ${tx.fraud_prediction || 'UNKNOWN'}
+                                    </span>
+                                    <span class="px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-800">
+                                        ${tx.risk_level || 'N/A'} Risk
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-slate-600">Amount:</span>
+                                        <span class="font-medium ml-2">₹${tx.amount || '0'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-600">Time:</span>
+                                        <span class="font-medium ml-2">${tx.timestamp || 'N/A'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-600">Fraud Score:</span>
+                                        <span class="font-medium ml-2 ${predColor}">
+                                            ${((tx.fraud_probability || 0) * 100).toFixed(1)}%
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-600">Risk Level:</span>
+                                        <span class="font-medium ml-2">${tx.confidence || 'N/A'}</span>
+                                    </div>
+                                </div>
+                                ${tx.risk_factors && tx.risk_factors.length > 0 ? `
+                                    <div class="mt-2 text-xs text-slate-600">
+                                        Risk factors: ${tx.risk_factors.join(', ')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Re-initialize icons
+            lucide.createIcons();
+        }
+
+        function filterTransactions() {
+            const searchTerm = document.getElementById('historySearch').value.toLowerCase();
+            
+            if (!searchTerm) {
+                filteredTransactions = allTransactions;
+            } else {
+                filteredTransactions = allTransactions.filter(tx => 
+                    (tx.transaction_id && tx.transaction_id.toLowerCase().includes(searchTerm)) ||
+                    (tx.timestamp && tx.timestamp.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            displayTransactions(filteredTransactions);
+        }
+
+        function exportTransactions(format) {
+            window.location.href = `/api/export?format=${format}`;
+        }
+
+        // Initialize dashboard on load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTheme(); // Load saved theme first
+            loadDashboard();
+            addRecentActivity('FraudGuard system started', 'success');
+        });
+    </script>
+</body>
+</html>
